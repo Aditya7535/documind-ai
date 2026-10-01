@@ -1,0 +1,26 @@
+# Meridian Cloud Technologies - Q4 Enterprise Financial and Operations Report
+
+## 1. Executive Financial Summary
+Meridian Cloud Technologies announced record financial results for the fourth quarter ended December 31.
+- Total Revenue: $482.6 million, representing a 28.4% year-over-year increase compared to Q4 of the prior fiscal year.
+- Annual Recurring Revenue (ARR): Reached $1.85 billion, up 31% year-over-year.
+- GAAP Operating Income: $94.2 million, or 19.5% of total revenue.
+- Non-GAAP Adjusted EBITDA: $138.4 million, reflecting an adjusted EBITDA margin of 28.7%.
+- Operating Cash Flow: $156.8 million, with Free Cash Flow (FCF) reaching $129.4 million.
+
+## 2. Artificial Intelligence and Cloud Infrastructure Investments
+During Q4, capital expenditure in AI infrastructure and cloud platform modernization totaled $42.5 million:
+- Cloud Platform Migration: 85% of core predictive analytics workloads have transitioned to AWS Bedrock and Serverless architectures.
+- Infrastructure Cost Optimization: Deployment of Amazon OpenSearch Serverless Vector Engine reduced idle compute costs by 34% compared to legacy self-hosted clusters.
+- Gross Margin Performance: Subscription and platform gross margin expanded to 78.2%, up 210 basis points year-over-year, driven by automated data tiering in Amazon S3 Intelligent-Tiering.
+
+## 3. Segment Breakdown and Regional Performance
+- North America Enterprise: Generated $298.5 million (61.9% of total revenue), growing 26% year-over-year.
+- EMEA (Europe, Middle East, Africa): Generated $122.3 million (25.3% of revenue), growing 32% year-over-year.
+- Asia-Pacific & Japan: Generated $61.8 million (12.8% of revenue), growing 36% year-over-year.
+
+## 4. Full Fiscal Year Guidance
+For the upcoming fiscal year, Meridian anticipates:
+- Total Revenue between $2.12 billion and $2.18 billion.
+- Non-GAAP Operating Margin expanding to approximately 24.5%.
+- Continued strategic capital allocation towards enterprise GenAI workflow automation and data protection tools.

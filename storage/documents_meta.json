@@ -1,0 +1,92 @@
+{
+  "sample_q4_enterprise_financial_report": {
+    "id": "sample_q4_enterprise_financial_report",
+    "name": "q4_enterprise_financial_report.txt",
+    "size": 2013,
+    "pages": 1,
+    "chunks_count": 4,
+    "status": "indexed",
+    "indexed_at": "2026-09-30T04:26:19"
+  },
+  "sample_saas_master_services_agreement": {
+    "id": "sample_saas_master_services_agreement",
+    "name": "saas_master_services_agreement.txt",
+    "size": 2095,
+    "pages": 1,
+    "chunks_count": 4,
+    "status": "indexed",
+    "indexed_at": "2026-09-30T04:26:19"
+  },
+  "doc_ab770fe3": {
+    "id": "doc_ab770fe3",
+    "name": "Dissertation_COMPLETE.pdf",
+    "size": 753120,
+    "pages": 48,
+    "chunks_count": 176,
+    "status": "indexed",
+    "indexed_at": "2026-09-30T05:34:17"
+  },
+  "nc_Reasons%20to%20use%20Nextcloud": {
+    "id": "nc_Reasons%20to%20use%20Nextcloud",
+    "name": "Reasons%20to%20use%20Nextcloud.pdf",
+    "size": 976625,
+    "pages": 8,
+    "chunks_count": 18,
+    "status": "indexed",
+    "indexed_at": "2026-09-30T06:06:11"
+  },
+  "nc_Templates%20credits": {
+    "id": "nc_Templates%20credits",
+    "name": "Templates%20credits.md",
+    "size": 3168,
+    "pages": 2,
+    "chunks_count": 6,
+    "status": "indexed",
+    "indexed_at": "2026-09-30T06:06:12"
+  },
+  "nc_Nextcloud%20Manual": {
+    "id": "nc_Nextcloud%20Manual",
+    "name": "Nextcloud%20Manual.pdf",
+    "size": 30412936,
+    "pages": 332,
+    "chunks_count": 578,
+    "status": "indexed",
+    "indexed_at": "2026-09-30T06:06:16"
+  },
+  "nc_Readme": {
+    "id": "nc_Readme",
+    "name": "Readme.md",
+    "size": 197,
+    "pages": 1,
+    "chunks_count": 1,
+    "status": "indexed",
+    "indexed_at": "2026-09-30T06:06:16"
+  },
+  "nc_README": {
+    "id": "nc_README",
+    "name": "README.md",
+    "size": 5000,
+    "pages": 2,
+    "chunks_count": 9,
+    "status": "indexed",
+    "indexed_at": "2026-09-30T06:13:13"
+  },
+  "nc_requirements": {
+    "id": "nc_requirements",
+    "name": "requirements.txt",
+    "size": 183,
+    "pages": 1,
+    "chunks_count": 1,
+    "status": "indexed",
+    "indexed_at": "2026-09-30T06:13:14"
+  },
+  "doc_7e1af441": {
+    "id": "doc_7e1af441",
+    "name": "BusinessGPT_IEEE_AIEI2027.pdf",
+    "size": 309278,
+    "pages": 6,
+    "chunks_count": 42,
+    "status": "indexed",
+    "indexed_at": "2026-09-30T06:21:13"
+  }
+}

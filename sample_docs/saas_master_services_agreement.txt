@@ -1,0 +1,18 @@
+# MASTER CLOUD SERVICES AND DATA PROTECTION AGREEMENT (MSA)
+
+## SECTION 1: SERVICES AND SERVICE LEVEL COMMITMENTS (SLA)
+1.1 Service Availability: The Provider warrants that the Cloud Services shall maintain an Uptime Service Commitment of at least 99.95% during each calendar month, excluding scheduled maintenance.
+1.2 Service Credits: In the event Provider fails to meet the 99.95% SLA, Customer shall be entitled to the following financial service credits:
+- 99.0% to 99.94% Uptime: 10% monthly subscription credit.
+- 95.0% to 98.99% Uptime: 25% monthly subscription credit.
+- Less than 95.0% Uptime: 50% monthly subscription credit.
+
+## SECTION 2: DATA PRIVACY, SECURITY AND ARTIFICIAL INTELLIGENCE USAGE
+2.1 Customer Data Ownership: Customer retains all rights, title, and intellectual property ownership in Customer Data and input documents uploaded to the platform.
+2.2 AI Model Training Exclusion: Provider explicitly covenants that Customer Data, uploaded files, vector embeddings, and prompt interactions will NOT be used to train, retrain, fine-tune, or improve any public, third-party, or foundational foundation models (including AWS Bedrock or Anthropic models).
+2.3 Encryption Standards: All data in transit shall be encrypted using TLS 1.3 or higher. All data at rest within Amazon S3 and Amazon OpenSearch Serverless shall be encrypted using AES-256 with AWS Key Management Service (AWS KMS) customer-managed keys (CMK).
+2.4 Compliance: Provider maintains SOC 2 Type II, ISO 27001, HIPAA, and GDPR compliance certifications.
+
+## SECTION 3: LIMITATION OF LIABILITY AND INDEMNIFICATION
+3.1 Direct Damages Cap: Except for gross negligence, willful misconduct, or breaches of Section 2 (Data Privacy), neither party's aggregate liability arising out of this Agreement shall exceed the total fees paid or payable by Customer in the twelve (12) months preceding the claim.
+3.2 Intellectual Property Indemnity: Provider shall defend, indemnify, and hold harmless Customer against any third-party claims alleging that the Cloud Service infringes any copyright, patent, or trade secret.

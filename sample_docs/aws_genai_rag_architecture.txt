@@ -1,0 +1,33 @@
+# AWS Architecture Whitepaper: Building Enterprise-Grade RAG Systems on AWS Bedrock
+
+## 1. Introduction to Enterprise Retrieval-Augmented Generation (RAG)
+Retrieval-Augmented Generation (RAG) optimizes the output of large language models (LLMs) by referencing an authoritative knowledge base outside of its training data before generating a response. On Amazon Web Services (AWS), building a scalable, serverless RAG architecture requires decoupling storage, vector indexing, compute, and generative inference.
+
+## 2. Document Ingestion Pipeline
+When documents such as PDFs, technical manuals, and financial disclosures are ingested, they follow this lifecycle:
+- Ingestion Trigger: Documents are uploaded to an Amazon Simple Storage Service (Amazon S3) bucket with server-side encryption (SSE-KMS).
+- Event Notification: An S3 ObjectCreated event triggers an AWS Lambda worker or an AWS Step Functions state machine.
+- Parsing & Chunking: Text extraction is performed using Amazon Textract for scanned images or PyPDF for structured text. The document is divided into semantic chunks with a chunk size of 800 tokens and a 150-token overlap to maintain contextual continuity across chunk boundaries.
+
+## 3. Vector Embeddings with AWS Bedrock Titan
+Amazon Bedrock provides the Titan Text Embeddings v2 model (amazon.titan-embed-text-v2:0). 
+Key specifications of Titan Text Embeddings v2:
+- Supports flexible vector dimensions: 256, 512, and 1024 dimensions.
+- 512 dimensions provides an optimal balance between accuracy, storage reduction, and latency (saving up to 50% in vector storage costs).
+- Native L2 normalization enables fast cosine similarity search via pure dot product operations.
+- Multilingual support for over 100 languages.
+
+## 4. Vector Database: Amazon OpenSearch Serverless (AOSS)
+Amazon OpenSearch Serverless Vector Engine provides a fully managed, serverless vector search environment:
+- OpenSearch Compute Units (OCUs): Automatically scales compute units up and down based on indexing and query load, eliminating the need to provision dedicated cluster instances.
+- Approximate k-NN Algorithm: Employs Hierarchical Navigable Small World (HNSW) graphs and Non-Metric Space Library (NMSLIB) for sub-millisecond nearest neighbor retrieval.
+- Cosine Similarity Metric: Normalized vectors are scored from 0.0 to 1.0, where higher scores indicate tighter semantic correlation.
+- Access Security: Controlled via AOSS Security Policies, including Encryption Policies (AWS KMS), Network Policies (VPC endpoints or public allowlist), and Data Access Policies (IAM roles).
+
+## 5. Inference and Grounding with Anthropic Claude 3.5 Sonnet
+When an end-user poses a query:
+1. The user query is converted into a 512-dimensional vector using Bedrock Titan Embeddings.
+2. A k-NN search queries the OpenSearch Serverless index, retrieving the top 4 to 8 most similar chunks with a similarity threshold of 0.45.
+3. The retrieved chunks are formatted into an augmented context block and injected into the prompt.
+4. Anthropic Claude 3.5 Sonnet (anthropic.claude-3-5-sonnet-20240620-v1:0) processes the augmented prompt.
+5. The model outputs a concise, factual answer with precise chunk ID and page citations, rejecting ungrounded assumptions.

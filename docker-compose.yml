@@ -1,0 +1,94 @@
+services:
+  # -------------------------------------------------------------
+  # 1. Nextcloud Self-Hosted Document Repository
+  # -------------------------------------------------------------
+  nextcloud:
+    image: nextcloud:apache
+    container_name: documind-nextcloud
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=nextcloud_secret
+      - MYSQL_HOST=nextcloud-db
+      - NEXTCLOUD_ADMIN_USER=admin
+      - NEXTCLOUD_ADMIN_PASSWORD=admin123
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost 127.0.0.1
+    volumes:
+      - nextcloud_data:/var/www/html
+    depends_on:
+      - nextcloud-db
+    networks:
+      - documind-net
+
+  nextcloud-db:
+    image: mariadb:10.11
+    container_name: documind-mariadb
+    restart: unless-stopped
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_secret
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=nextcloud_secret
+    volumes:
+      - nextcloud_db:/var/lib/mysql
+    networks:
+      - documind-net
+
+  # -------------------------------------------------------------
+  # 2. DocuMind GenAI / RAG FastAPI Backend Engine
+  # -------------------------------------------------------------
+  rag-backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: documind-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - RUN_MODE=${RUN_MODE:-local}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME:-documind-documents-bucket}
+      - OPENSEARCH_ENDPOINT=${OPENSEARCH_ENDPOINT:-}
+      - BEDROCK_EMBEDDING_MODEL_ID=amazon.titan-embed-text-v2:0
+      - BEDROCK_LLM_MODEL_ID=anthropic.claude-3-5-sonnet-20240620-v1:0
+      - NEXTCLOUD_URL=http://nextcloud:80
+      - NEXTCLOUD_USERNAME=admin
+      - NEXTCLOUD_PASSWORD=admin123
+    volumes:
+      - documind_storage:/app/storage
+    depends_on:
+      - nextcloud
+    networks:
+      - documind-net
+
+  # -------------------------------------------------------------
+  # 3. DocuMind React + Vite Web Dashboard
+  # -------------------------------------------------------------
+  rag-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: documind-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - rag-backend
+    networks:
+      - documind-net
+
+volumes:
+  nextcloud_data:
+  nextcloud_db:
+  documind_storage:
+
+networks:
+  documind-net:
+    driver: bridge

@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: documind-ai
+    runtime: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    region: oregon
+    envVars:
+      - key: RUN_MODE
+        value: local
+      - key: PYTHONUNBUFFERED
+        value: "1"
