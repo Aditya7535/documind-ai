@@ -28,39 +28,50 @@
   },
   "nc_Reasons%20to%20use%20Nextcloud": {
     "id": "nc_Reasons%20to%20use%20Nextcloud",
-    "name": "Reasons%20to%20use%20Nextcloud.pdf",
+    "name": "Reasons to use Nextcloud.pdf",
     "size": 976625,
     "pages": 8,
     "chunks_count": 18,
     "status": "indexed",
-    "indexed_at": "2026-09-30T06:06:11"
+    "indexed_at": "2026-09-30T06:06:11",
+    "has_nextcloud": true,
+    "storage_location": "Nextcloud Storage"
   },
   "nc_Templates%20credits": {
     "id": "nc_Templates%20credits",
-    "name": "Templates%20credits.md",
+    "name": "Templates credits.md",
     "size": 3168,
     "pages": 2,
     "chunks_count": 6,
     "status": "indexed",
-    "indexed_at": "2026-09-30T06:06:12"
+    "indexed_at": "2026-09-30T06:06:12",
+    "has_nextcloud": true,
+    "storage_location": "Nextcloud Storage"
   },
   "nc_Nextcloud%20Manual": {
     "id": "nc_Nextcloud%20Manual",
-    "name": "Nextcloud%20Manual.pdf",
+    "name": "Nextcloud Manual.pdf",
     "size": 30412936,
     "pages": 332,
     "chunks_count": 578,
     "status": "indexed",
-    "indexed_at": "2026-09-30T06:06:16"
+    "indexed_at": "2026-09-30T06:06:16",
+    "has_nextcloud": true,
+    "storage_location": "Nextcloud Storage"
   },
   "nc_Readme": {
     "id": "nc_Readme",
     "name": "Readme.md",
-    "size": 197,
+    "size": 0,
     "pages": 1,
     "chunks_count": 1,
     "status": "indexed",
-    "indexed_at": "2026-09-30T06:06:16"
+    "indexed_at": "2026-10-14T04:26:44",
+    "storage_location": "Nextcloud: /DocuMind/Readme.md",
+    "nextcloud_path": "/remote.php/dav/files/admin/DocuMind/Readme.md",
+    "nextcloud_url": "http://localhost:8080/index.php/apps/files/files?dir=/DocuMind",
+    "has_nextcloud": true,
+    "source": "Nextcloud Direct"
   },
   "nc_README": {
     "id": "nc_README",
@@ -69,7 +80,9 @@
     "pages": 2,
     "chunks_count": 9,
     "status": "indexed",
-    "indexed_at": "2026-09-30T06:13:13"
+    "indexed_at": "2026-09-30T06:13:13",
+    "has_nextcloud": true,
+    "storage_location": "Nextcloud Storage"
   },
   "nc_requirements": {
     "id": "nc_requirements",
@@ -78,15 +91,148 @@
     "pages": 1,
     "chunks_count": 1,
     "status": "indexed",
-    "indexed_at": "2026-09-30T06:13:14"
+    "indexed_at": "2026-09-30T06:13:14",
+    "has_nextcloud": true,
+    "storage_location": "Nextcloud Storage"
   },
-  "doc_7e1af441": {
-    "id": "doc_7e1af441",
-    "name": "BusinessGPT_IEEE_AIEI2027.pdf",
-    "size": 309278,
-    "pages": 6,
-    "chunks_count": 42,
+  "doc_1b27d007": {
+    "id": "doc_1b27d007",
+    "name": "aws_genai_rag_architecture.txt",
+    "size": 3244,
+    "pages": 2,
+    "chunks_count": 5,
     "status": "indexed",
-    "indexed_at": "2026-09-30T06:21:13"
+    "indexed_at": "2026-10-14T04:51:23",
+    "storage_location": "Nextcloud: /DocuMind/aws_genai_rag_architecture.txt",
+    "nextcloud_path": "/remote.php/dav/files/admin/DocuMind/aws_genai_rag_architecture.txt",
+    "nextcloud_url": "http://localhost:8080/index.php/apps/files/files?dir=/DocuMind",
+    "has_nextcloud": true,
+    "source": "Nextcloud + S3"
+  },
+  "doc_5b38c1bd": {
+    "id": "doc_5b38c1bd",
+    "name": "aws_genai_rag_architecture.txt",
+    "size": 3244,
+    "pages": 2,
+    "chunks_count": 5,
+    "status": "indexed",
+    "indexed_at": "2026-10-14T05:22:08",
+    "storage_location": "Nextcloud: /DocuMind/aws_genai_rag_architecture.txt",
+    "nextcloud_path": "/remote.php/dav/files/admin/DocuMind/aws_genai_rag_architecture.txt",
+    "nextcloud_url": "http://localhost:8080/index.php/apps/files/files?dir=/DocuMind",
+    "has_nextcloud": true,
+    "source": "Nextcloud + S3"
+  },
+  "doc_6ad74819": {
+    "id": "doc_6ad74819",
+    "name": "NextGen_Cybersecurity_Incident_Playbook.md",
+    "size": 2024,
+    "pages": 1,
+    "chunks_count": 3,
+    "status": "indexed",
+    "indexed_at": "2026-10-14T05:23:39",
+    "storage_location": "Nextcloud: /DocuMind/NextGen_Cybersecurity_Incident_Playbook.md",
+    "nextcloud_path": "/remote.php/dav/files/admin/DocuMind/NextGen_Cybersecurity_Incident_Playbook.md",
+    "nextcloud_url": "http://localhost:8080/index.php/apps/files/files?dir=/DocuMind",
+    "has_nextcloud": true,
+    "source": "Nextcloud + S3"
+  },
+  "doc_fb5e9343": {
+    "id": "doc_fb5e9343",
+    "name": "q4_enterprise_financial_report.txt",
+    "size": 2013,
+    "pages": 1,
+    "chunks_count": 4,
+    "status": "indexed",
+    "indexed_at": "2026-10-14T05:24:05",
+    "storage_location": "Nextcloud: /DocuMind/q4_enterprise_financial_report.txt",
+    "nextcloud_path": "/remote.php/dav/files/admin/DocuMind/q4_enterprise_financial_report.txt",
+    "nextcloud_url": "http://localhost:8080/index.php/apps/files/files?dir=/DocuMind",
+    "has_nextcloud": true,
+    "source": "Nextcloud + S3"
+  },
+  "doc_15df8a00": {
+    "id": "doc_15df8a00",
+    "name": "saas_master_services_agreement.txt",
+    "size": 2095,
+    "pages": 1,
+    "chunks_count": 4,
+    "status": "indexed",
+    "indexed_at": "2026-10-14T05:27:57",
+    "storage_location": "Nextcloud: /DocuMind/saas_master_services_agreement.txt",
+    "nextcloud_path": "/remote.php/dav/files/admin/DocuMind/saas_master_services_agreement.txt",
+    "nextcloud_url": "http://localhost:8080/index.php/apps/files/files?dir=/DocuMind",
+    "has_nextcloud": true,
+    "source": "Nextcloud + S3"
+  },
+  "sample_aws_genai_rag_architecture": {
+    "id": "sample_aws_genai_rag_architecture",
+    "name": "aws_genai_rag_architecture.txt",
+    "size": 3244,
+    "pages": 2,
+    "chunks_count": 5,
+    "status": "indexed",
+    "indexed_at": "2026-10-14T05:51:00",
+    "storage_location": "Local / S3",
+    "nextcloud_path": null,
+    "nextcloud_url": null,
+    "has_nextcloud": false,
+    "source": "Upload"
+  },
+  "sample_Healthcare_AI_HIPAA_Policy": {
+    "id": "sample_Healthcare_AI_HIPAA_Policy",
+    "name": "Healthcare_AI_HIPAA_Policy.md",
+    "size": 2149,
+    "pages": 1,
+    "chunks_count": 5,
+    "status": "indexed",
+    "indexed_at": "2026-10-14T05:51:01",
+    "storage_location": "Local / S3",
+    "nextcloud_path": null,
+    "nextcloud_url": null,
+    "has_nextcloud": false,
+    "source": "Upload"
+  },
+  "sample_NextGen_Cybersecurity_Incident_Playbook": {
+    "id": "sample_NextGen_Cybersecurity_Incident_Playbook",
+    "name": "NextGen_Cybersecurity_Incident_Playbook.md",
+    "size": 2024,
+    "pages": 1,
+    "chunks_count": 3,
+    "status": "indexed",
+    "indexed_at": "2026-10-14T05:51:03",
+    "storage_location": "Local / S3",
+    "nextcloud_path": null,
+    "nextcloud_url": null,
+    "has_nextcloud": false,
+    "source": "Upload"
+  },
+  "sample_Tesla_Energy_Storage_Megapack_Specs": {
+    "id": "sample_Tesla_Energy_Storage_Megapack_Specs",
+    "name": "Tesla_Energy_Storage_Megapack_Specs.md",
+    "size": 1705,
+    "pages": 1,
+    "chunks_count": 4,
+    "status": "indexed",
+    "indexed_at": "2026-10-14T05:51:05",
+    "storage_location": "Local / S3",
+    "nextcloud_path": null,
+    "nextcloud_url": null,
+    "has_nextcloud": false,
+    "source": "Upload"
+  },
+  "doc_dd9e2632": {
+    "id": "doc_dd9e2632",
+    "name": "saas_master_services_agreement.txt",
+    "size": 2095,
+    "pages": 1,
+    "chunks_count": 4,
+    "status": "indexed",
+    "indexed_at": "2026-10-14T06:12:19",
+    "storage_location": "Nextcloud: /DocuMind/saas_master_services_agreement.txt",
+    "nextcloud_path": "/remote.php/dav/files/admin/DocuMind/saas_master_services_agreement.txt",
+    "nextcloud_url": "http://localhost:8080/index.php/apps/files/files?dir=/DocuMind",
+    "has_nextcloud": true,
+    "source": "Nextcloud + S3"
   }
 }

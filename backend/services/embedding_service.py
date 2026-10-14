@@ -62,16 +62,22 @@ class EmbeddingService:
     def _local_semantic_embedding(self, text: str) -> List[float]:
         """
         Deterministic, lightweight, dense semantic hash vector (512-dim) with L2 normalization.
+        Uses MD5 hashing to ensure 100% deterministic consistency across all Python process restarts.
         Extracts subwords, n-grams, and keywords to allow real cosine similarity matching locally.
         """
+        import hashlib
         vector = np.zeros(self.dimension, dtype=np.float32)
         clean_text = text.lower()
         words = re.findall(r'\b\w+\b', clean_text)
 
+        # Helper for deterministic hashing
+        def _h(s: str) -> int:
+            return int(hashlib.md5(s.encode('utf-8')).hexdigest()[:8], 16) % self.dimension
+
         # Word & character n-gram hashing
         for w in words:
             # Word level hash
-            h_val = hash(w) % self.dimension
+            h_val = _h(w)
             weight = math.log(len(w) + 2)
             vector[h_val] += weight
 
@@ -79,13 +85,13 @@ class EmbeddingService:
             if len(w) >= 3:
                 for i in range(len(w) - 2):
                     tri = w[i:i+3]
-                    h_tri = hash(tri) % self.dimension
+                    h_tri = _h(tri)
                     vector[h_tri] += 0.45 * weight
 
         # Global sentence character trigrams
         for i in range(len(clean_text) - 2):
             c_tri = clean_text[i:i+3]
-            h_c = hash(c_tri) % self.dimension
+            h_c = _h(c_tri)
             vector[h_c] += 0.2
 
         # L2 Normalize

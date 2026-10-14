@@ -74,11 +74,13 @@ class LLMService:
             answer, prompt_tokens, comp_tokens = self._simulate_rag_response(query, retrieved_chunks)
 
         # Extract citations referenced in answer or match to retrieved chunks
+        import urllib.parse
         citations = []
         for c in retrieved_chunks:
+            clean_name = urllib.parse.unquote(c["doc_name"])
             citations.append({
                 "chunk_id": c["id"],
-                "doc_name": c["doc_name"],
+                "doc_name": clean_name,
                 "page_number": c["page_number"],
                 "score": c.get("score", 0.0),
                 "preview": c["text"][:140] + ("..." if len(c["text"]) > 140 else ""),
@@ -171,29 +173,27 @@ class LLMService:
         if not top_candidates and candidate_items:
             top_candidates = candidate_items[:2]
 
-        top_chunk = chunks[0]
         if top_candidates:
-            bullet_points = "\n".join([
-                f"- {item[1]} [Chunk: {item[2]['id']}, Page: {item[2]['page_number']}]"
-                for item in top_candidates
-            ])
-            lead_finding = top_candidates[0][1]
+            key_points = []
+            for item in top_candidates:
+                text_clean = item[1].strip()
+                if not text_clean.endswith(('.', '!', '?')):
+                    text_clean += '.'
+                key_points.append(f"• {text_clean}")
+            bullet_section = "\n".join(key_points)
             source_doc = top_candidates[0][2]['doc_name']
             source_page = top_candidates[0][2]['page_number']
-            best_score = top_candidates[0][2].get('score', 0.85)
         else:
-            first_text = re.sub(r'\.{3,}', ' ', top_chunk.get("text", "")).strip()[:180]
-            bullet_points = f"- {first_text} [Chunk: {top_chunk['id']}, Page: {top_chunk['page_number']}]"
-            lead_finding = first_text
+            first_text = re.sub(r'\.{3,}', ' ', top_chunk.get("text", "")).strip()[:200]
+            if not first_text.endswith(('.', '!', '?')):
+                first_text += '.'
+            bullet_section = f"• {first_text}"
             source_doc = top_chunk['doc_name']
             source_page = top_chunk['page_number']
-            best_score = top_chunk.get('score', 0.85)
 
         summary = (
-            f"Based on the analyzed context from **{source_doc}** (Page {source_page}), "
-            f"here are the key findings regarding your query:\n\n"
-            f"{bullet_points}\n\n"
-            f"**Synthesis:** {lead_finding} (similarity confidence: **{best_score:.1%}**)."
+            f"{bullet_section}\n\n"
+            f"*(Source: **{source_doc}**, Page {source_page})*"
         )
 
         prompt_tokens = sum(len(c.get("text", "").split()) for c in chunks) + 40

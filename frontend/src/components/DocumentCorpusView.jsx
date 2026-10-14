@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { FileText, UploadCloud, Trash2, HardDrive, RefreshCw, CheckCircle, Search, ShieldCheck, Database, Layers } from 'lucide-react';
+import { FileText, UploadCloud, Trash2, HardDrive, RefreshCw, CheckCircle, Search, ShieldCheck, Database, Layers, ExternalLink, CloudCheck, Folder } from 'lucide-react';
 
 export default function DocumentCorpusView({
   documents,
@@ -7,7 +7,9 @@ export default function DocumentCorpusView({
   onDelete,
   uploading,
   onSyncNextcloud,
-  syncingNextcloud
+  onOpenNextcloud,
+  syncingNextcloud,
+  nextcloudStatus
 }) {
   const fileInputRef = useRef(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,10 +25,15 @@ export default function DocumentCorpusView({
 
   const filteredDocs = documents.filter(doc => {
     const matchesSearch = doc.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const isNextcloud = doc.has_nextcloud || doc.id?.startsWith('nc_') || doc.storage_location?.toLowerCase().includes('nextcloud');
+
+    if (filterType === 'NEXTCLOUD') return matchesSearch && isNextcloud;
     if (filterType === 'PDF') return matchesSearch && doc.name.endsWith('.pdf');
     if (filterType === 'TXT') return matchesSearch && (doc.name.endsWith('.txt') || doc.name.endsWith('.md'));
     return matchesSearch;
   });
+
+  const nextcloudCount = documents.filter(doc => doc.has_nextcloud || doc.id?.startsWith('nc_') || doc.storage_location?.toLowerCase().includes('nextcloud')).length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -52,7 +59,8 @@ export default function DocumentCorpusView({
             onChange={(e) => setFilterType(e.target.value)}
             className="select-control"
           >
-            <option value="ALL">All File Types</option>
+            <option value="ALL">All File Types ({documents.length})</option>
+            <option value="NEXTCLOUD">Nextcloud Storage ({nextcloudCount})</option>
             <option value="PDF">PDF Documents (.pdf)</option>
             <option value="TXT">Plain Text / Markdown (.txt, .md)</option>
           </select>
@@ -75,21 +83,32 @@ export default function DocumentCorpusView({
           />
 
           <button
-            onClick={onSyncNextcloud}
+            onClick={onOpenNextcloud || onSyncNextcloud}
             disabled={syncingNextcloud}
             className="btn btn-secondary"
+            title="Connect and manage Nextcloud WebDAV Storage"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            <HardDrive size={13} />
-            {syncingNextcloud ? 'Syncing...' : 'Sync Nextcloud WebDAV'}
+            <span style={{
+              width: '7px',
+              height: '7px',
+              borderRadius: '50%',
+              backgroundColor: nextcloudStatus?.connected ? '#10b981' : '#f59e0b',
+              display: 'inline-block',
+              boxShadow: nextcloudStatus?.connected ? '0 0 6px #10b981' : 'none'
+            }} />
+            <HardDrive size={13} color="#38bdf8" />
+            Nextcloud Storage
           </button>
 
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
             className="btn btn-primary"
+            title="Upload document: automatically saved to Nextcloud (/DocuMind) and vectorized into RAG"
           >
             <UploadCloud size={14} className={uploading ? 'animate-spin' : ''} />
-            {uploading ? 'Ingesting Chunks...' : 'Ingest Document to S3'}
+            {uploading ? 'Ingesting Chunks...' : 'Upload to Nextcloud & RAG'}
           </button>
         </div>
 
@@ -97,14 +116,30 @@ export default function DocumentCorpusView({
 
       {/* Enterprise Data Table */}
       <div className="panel" style={{ overflow: 'hidden' }}>
-        <div className="panel-header">
-          <div className="panel-title">
+        <div className="panel-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Database size={14} color="#0284c7" />
             Active Corpus Artifacts ({filteredDocs.length} Total)
           </div>
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
-            Bucket: s3://documind-rag-documents-bucket
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{
+              fontSize: '0.72rem',
+              color: '#38bdf8',
+              background: 'rgba(2, 132, 199, 0.12)',
+              border: '1px solid rgba(2, 132, 199, 0.3)',
+              borderRadius: '4px',
+              padding: '2px 8px',
+              fontFamily: 'var(--font-mono)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              <HardDrive size={11} /> Nextcloud: /DocuMind
+            </span>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
+              s3://documind-rag-documents-bucket
+            </span>
+          </div>
         </div>
 
         {filteredDocs.length === 0 ? (
@@ -114,7 +149,7 @@ export default function DocumentCorpusView({
               No indexed documents in the corpus
             </div>
             <div style={{ fontSize: '0.74rem', marginTop: '4px' }}>
-              Click <strong>Ingest Document to S3</strong> or use <strong>Load Benchmark Docs</strong> in the header bar.
+              Click <strong>Upload to Nextcloud & RAG</strong> or open <strong>Nextcloud Storage</strong> to sync existing files.
             </div>
           </div>
         ) : (
@@ -132,51 +167,94 @@ export default function DocumentCorpusView({
                 </tr>
               </thead>
               <tbody>
-                {filteredDocs.map((doc) => (
-                  <tr key={doc.id}>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FileText size={15} color="#3b82f6" />
-                        <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>
-                          {doc.name}
+                {filteredDocs.map((doc) => {
+                  const isNc = doc.has_nextcloud || doc.id?.startsWith('nc_') || doc.storage_location?.toLowerCase().includes('nextcloud');
+                  const nextcloudFolder = doc.storage_location?.includes('/DocuMind') ? '/DocuMind' : (doc.storage_location || '/DocuMind');
+                  const openUrl = doc.nextcloud_url || `http://localhost:8080/index.php/apps/files/files?dir=/DocuMind`;
+
+                  return (
+                    <tr key={doc.id}>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <FileText size={15} color="#3b82f6" />
+                          <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>
+                            {doc.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        {isNc ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{
+                              background: 'rgba(2, 132, 199, 0.15)',
+                              color: '#38bdf8',
+                              border: '1px solid rgba(2, 132, 199, 0.4)',
+                              borderRadius: '6px',
+                              padding: '2px 8px',
+                              fontSize: '0.72rem',
+                              fontFamily: 'var(--font-mono)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}>
+                              <HardDrive size={11} color="#38bdf8" />
+                              Nextcloud: /DocuMind
+                            </span>
+                            <a
+                              href={openUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="Open folder in Nextcloud Web UI"
+                              style={{
+                                color: '#94a3b8',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                padding: '3px',
+                                borderRadius: '4px',
+                                textDecoration: 'none'
+                              }}
+                              className="hover-opacity"
+                            >
+                              <ExternalLink size={12} />
+                            </a>
+                          </div>
+                        ) : (
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                            {doc.storage_location || 's3://documind/docs'}
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ fontFamily: 'var(--font-mono)' }}>
+                        {formatBytes(doc.size)}
+                      </td>
+                      <td style={{ fontFamily: 'var(--font-mono)' }}>
+                        {doc.pages || 1}
+                      </td>
+                      <td>
+                        <span className="badge badge-blue">
+                          {doc.chunks_count || 0} chunks (512-d)
                         </span>
-                      </div>
-                    </td>
-                    <td>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                        {doc.id.startsWith('nc_') ? 'Nextcloud /remote.php' : 's3://documind/docs'}
-                      </span>
-                    </td>
-                    <td style={{ fontFamily: 'var(--font-mono)' }}>
-                      {formatBytes(doc.size)}
-                    </td>
-                    <td style={{ fontFamily: 'var(--font-mono)' }}>
-                      {doc.pages || 1}
-                    </td>
-                    <td>
-                      <span className="badge badge-blue">
-                        {doc.chunks_count || 0} chunks (512-d)
-                      </span>
-                    </td>
-                    <td>
-                      <span className="badge badge-green">
-                        <CheckCircle size={10} />
-                        Active & Indexed
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <button
-                        onClick={() => onDelete(doc.id)}
-                        className="btn btn-danger"
-                        style={{ padding: '3px 8px', fontSize: '0.7rem' }}
-                        title="Delete from S3 and remove OpenSearch embeddings"
-                      >
-                        <Trash2 size={12} />
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td>
+                        <span className="badge badge-green">
+                          <CheckCircle size={10} />
+                          Active & Indexed
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <button
+                          onClick={() => onDelete(doc.id)}
+                          className="btn btn-danger"
+                          style={{ padding: '3px 8px', fontSize: '0.7rem' }}
+                          title="Purge document from RAG and Nextcloud storage"
+                        >
+                          <Trash2 size={12} />
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

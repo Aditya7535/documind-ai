@@ -1,12 +1,22 @@
 import os
 import uuid
 import time
+import subprocess
 from typing import Optional, List
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
+
+class NextcloudIngestRequest(BaseModel):
+    path: str
+    name: str
+
+class NextcloudConfigRequest(BaseModel):
+    url: str
+    username: str
+    password: str
 
 from backend.config import settings
 from backend.services.document_parser import DocumentParser
@@ -122,10 +132,41 @@ async def upload_document(file: UploadFile = File(...)):
     chunk_texts = [c["text"] for c in chunks]
     embeddings = embedding_service.embed_documents(chunk_texts)
 
-    # 5. Store chunks & vectors into Vector Database
+    # 5. Store in Nextcloud storage (/DocuMind)
+    nextcloud_result = {"success": False, "error": "offline"}
+    storage_loc = "Local / S3"
+    nc_path = None
+    nc_web_url = None
+    has_nc = False
+
+    try:
+        from backend.services.nextcloud_service import nextcloud_service
+        if nextcloud_service.test_connection():
+            nextcloud_result = nextcloud_service.upload_file(file_bytes, doc_name, folder="DocuMind")
+            if nextcloud_result.get("success"):
+                storage_loc = f"Nextcloud: /DocuMind/{doc_name}"
+                nc_path = nextcloud_result.get("nextcloud_path")
+                nc_web_url = nextcloud_result.get("web_url")
+                has_nc = True
+    except Exception as e:
+        print(f"[Upload] Nextcloud upload failed: {e}")
+        nextcloud_result = {"success": False, "error": str(e)}
+
+    # 6. Store chunks & vectors into Vector Database
     vector_store = get_vector_store()
     if hasattr(vector_store, "add_document"):
-        vector_store.add_document(doc_id, doc_name, file_size, len(pages))
+        vector_store.add_document(
+            doc_id,
+            doc_name,
+            file_size,
+            len(pages),
+            storage_location=storage_loc,
+            nextcloud_path=nc_path,
+            nextcloud_url=nc_web_url,
+            has_nextcloud=has_nc,
+            file_uri=file_uri,
+            source="Nextcloud + S3" if has_nc else "Local / S3"
+        )
     vector_store.add_chunks_with_embeddings(chunks, embeddings)
 
     return {
@@ -135,6 +176,8 @@ async def upload_document(file: UploadFile = File(...)):
         "pages": len(pages),
         "chunks_indexed": len(chunks),
         "file_uri": file_uri,
+        "storage_location": storage_loc,
+        "nextcloud": nextcloud_result,
         "status": "success"
     }
 
@@ -155,7 +198,8 @@ async def query_documents(req: QueryRequest):
     retrieved_chunks = vector_store.search(
         query_embedding=query_embedding,
         top_k=top_k,
-        threshold=threshold
+        threshold=threshold,
+        query_text=req.query
     )
 
     # 3. Generate grounded RAG answer via Bedrock LLM
@@ -175,8 +219,19 @@ async def query_documents(req: QueryRequest):
 def delete_document(doc_id: str):
     vector_store = get_vector_store()
     if hasattr(vector_store, "delete_document"):
+        doc_info = {}
+        if hasattr(vector_store, "documents"):
+            doc_info = vector_store.documents.get(doc_id, {})
+
         success = vector_store.delete_document(doc_id)
         if success:
+            if doc_info.get("has_nextcloud") and doc_info.get("name"):
+                try:
+                    from backend.services.nextcloud_service import nextcloud_service
+                    folder = "DocuMind" if "DocuMind" in str(doc_info.get("storage_location", "")) else ""
+                    nextcloud_service.delete_file(doc_info["name"], folder=folder)
+                except Exception as e:
+                    print(f"[Delete] Nextcloud delete non-fatal warning: {e}")
             return {"status": "deleted", "doc_id": doc_id}
         raise HTTPException(status_code=404, detail="Document not found")
     return {"status": "unsupported", "doc_id": doc_id}
@@ -230,6 +285,150 @@ def nextcloud_status():
         "username": nextcloud_service.username
     }
 
+@app.post("/api/nextcloud/config")
+def update_nextcloud_config(config: NextcloudConfigRequest):
+    """
+    Update Nextcloud connection details dynamically.
+    """
+    from backend.services.nextcloud_service import nextcloud_service
+    nextcloud_service.update_config(config.url, config.username, config.password)
+    connected = nextcloud_service.test_connection()
+    return {
+        "connected": connected,
+        "url": nextcloud_service.url,
+        "username": nextcloud_service.username,
+        "message": "Connected successfully to Nextcloud!" if connected else f"Configuration saved, but Nextcloud at {nextcloud_service.url} is currently unreachable."
+    }
+
+@app.post("/api/nextcloud/launch-docker")
+def launch_docker_nextcloud():
+    """
+    Trigger docker compose up for the Nextcloud and MariaDB containers.
+    """
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    try:
+        res = subprocess.run(
+            ["docker", "compose", "up", "-d", "nextcloud", "nextcloud-db"],
+            cwd=project_root,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        if res.returncode == 0:
+            time.sleep(2)
+            from backend.services.nextcloud_service import nextcloud_service
+            is_ready = nextcloud_service.test_connection()
+            return {
+                "success": True,
+                "message": "Nextcloud Docker containers started successfully.",
+                "connected": is_ready,
+                "stdout": res.stdout
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Docker daemon is not responding or Docker Desktop is not running. Please open Docker Desktop on Windows, wait for it to start, then retry.",
+                "error": res.stderr
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Could not execute Docker command: {str(e)}. Please start Docker Desktop first."
+        }
+
+@app.get("/api/nextcloud/files")
+def get_nextcloud_files():
+    """
+    List all documents in Nextcloud storage (in /DocuMind and root)
+    with their corresponding RAG indexation status.
+    """
+    from backend.services.nextcloud_service import nextcloud_service
+    if not nextcloud_service.test_connection():
+        return {
+            "connected": False,
+            "url": nextcloud_service.url,
+            "username": nextcloud_service.username,
+            "files": []
+        }
+
+    raw_files = nextcloud_service.list_documents()
+    vector_store = get_vector_store()
+    indexed_names = {}
+    if hasattr(vector_store, "documents"):
+        for d_id, doc in vector_store.documents.items():
+            indexed_names[doc.get("name")] = d_id
+
+    enriched = []
+    for f in raw_files:
+        is_idx = f["name"] in indexed_names
+        enriched.append({
+            **f,
+            "is_indexed": is_idx,
+            "doc_id": indexed_names.get(f["name"])
+        })
+
+    return {
+        "connected": True,
+        "url": nextcloud_service.url,
+        "username": nextcloud_service.username,
+        "total_files": len(enriched),
+        "files": enriched
+    }
+
+@app.post("/api/nextcloud/ingest-file")
+def nextcloud_ingest_file(req: NextcloudIngestRequest):
+    """
+    Index a specific document from Nextcloud storage directly into the RAG vector store.
+    """
+    from backend.services.nextcloud_service import nextcloud_service
+    if not nextcloud_service.test_connection():
+        raise HTTPException(status_code=503, detail="Nextcloud is currently unreachable.")
+
+    try:
+        content = nextcloud_service.download_file(req.path)
+        fname = req.name
+        doc_id = f"nc_{fname.replace(' ', '_').split('.')[0]}"
+
+        if fname.lower().endswith('.pdf'):
+            pages = DocumentParser.extract_text_from_pdf(content)
+        else:
+            pages = DocumentParser.extract_text_from_plain(content.decode('utf-8', errors='ignore'))
+
+        if not pages:
+            raise HTTPException(status_code=400, detail="Could not extract readable text from document.")
+
+        chunks = DocumentParser.chunk_document(doc_id, fname, pages)
+        chunk_texts = [c["text"] for c in chunks]
+        embeddings = embedding_service.embed_documents(chunk_texts)
+
+        vector_store = get_vector_store()
+        folder_name = "DocuMind" if "DocuMind" in req.path else "Root"
+        storage_loc = f"Nextcloud: /{folder_name}/{fname}"
+
+        if hasattr(vector_store, "add_document"):
+            vector_store.add_document(
+                doc_id,
+                fname,
+                len(content),
+                len(pages),
+                storage_location=storage_loc,
+                nextcloud_path=req.path,
+                nextcloud_url=f"{nextcloud_service.url}/index.php/apps/files/files?dir=/{folder_name}",
+                has_nextcloud=True,
+                source="Nextcloud Direct"
+            )
+        vector_store.add_chunks_with_embeddings(chunks, embeddings)
+
+        return {
+            "status": "indexed",
+            "doc_id": doc_id,
+            "name": fname,
+            "chunks": len(chunks),
+            "storage_location": storage_loc
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to ingest file: {str(e)}")
+
 @app.post("/api/nextcloud/sync")
 def nextcloud_sync():
     """
@@ -237,7 +436,6 @@ def nextcloud_sync():
     """
     from backend.services.nextcloud_service import nextcloud_service
     if not nextcloud_service.test_connection():
-        # If Nextcloud container is not yet initialized or reachable, return informative status
         return {
             "status": "offline",
             "message": "Nextcloud instance at " + nextcloud_service.url + " is not reachable yet. Start with `docker compose up -d`.",
@@ -250,24 +448,47 @@ def nextcloud_sync():
 
     for item in files:
         fname = item["name"]
-        content = nextcloud_service.download_file(item["path"])
-        doc_id = f"nc_{fname.split('.')[0]}"
-        if hasattr(vector_store, "documents") and doc_id in vector_store.documents:
-            continue
+        # Skip if already indexed
+        if hasattr(vector_store, "documents"):
+            existing = any(d.get("name") == fname for d in vector_store.documents.values())
+            if existing:
+                continue
 
-        if fname.lower().endswith('.pdf'):
-            pages = DocumentParser.extract_text_from_pdf(content)
-        else:
-            pages = DocumentParser.extract_text_from_plain(content.decode('utf-8', errors='ignore'))
+        try:
+            content = nextcloud_service.download_file(item["path"])
+            doc_id = f"nc_{fname.replace(' ', '_').split('.')[0]}"
 
-        chunks = DocumentParser.chunk_document(doc_id, fname, pages)
-        chunk_texts = [c["text"] for c in chunks]
-        embeddings = embedding_service.embed_documents(chunk_texts)
+            if fname.lower().endswith('.pdf'):
+                pages = DocumentParser.extract_text_from_pdf(content)
+            else:
+                pages = DocumentParser.extract_text_from_plain(content.decode('utf-8', errors='ignore'))
 
-        if hasattr(vector_store, "add_document"):
-            vector_store.add_document(doc_id, fname, len(content), len(pages))
-        vector_store.add_chunks_with_embeddings(chunks, embeddings)
-        synced.append({"name": fname, "chunks": len(chunks)})
+            if not pages:
+                continue
+
+            chunks = DocumentParser.chunk_document(doc_id, fname, pages)
+            chunk_texts = [c["text"] for c in chunks]
+            embeddings = embedding_service.embed_documents(chunk_texts)
+
+            folder_name = item.get("folder", "DocuMind")
+            storage_loc = f"Nextcloud: /{folder_name}/{fname}"
+
+            if hasattr(vector_store, "add_document"):
+                vector_store.add_document(
+                    doc_id,
+                    fname,
+                    len(content),
+                    len(pages),
+                    storage_location=storage_loc,
+                    nextcloud_path=item["path"],
+                    nextcloud_url=item.get("web_url"),
+                    has_nextcloud=True,
+                    source="Nextcloud Sync"
+                )
+            vector_store.add_chunks_with_embeddings(chunks, embeddings)
+            synced.append({"name": fname, "chunks": len(chunks), "folder": folder_name})
+        except Exception as e:
+            print(f"[Sync] Error indexing Nextcloud file '{fname}': {e}")
 
     return {"status": "synced", "count": len(synced), "files": synced}
 

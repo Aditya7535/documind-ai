@@ -5,6 +5,7 @@ import DocumentCorpusView from './components/DocumentCorpusView';
 import VectorIndexView from './components/VectorIndexView';
 import InfrastructureView from './components/InfrastructureView';
 import ChunkInspectorModal from './components/ChunkInspectorModal';
+import NextcloudModal from './components/NextcloudModal';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? (typeof window !== 'undefined' && window.location.port === '5173' ? 'http://localhost:8000' : '');
 
@@ -19,6 +20,8 @@ export default function App() {
   const [seeding, setSeeding] = useState(false);
   const [syncingNextcloud, setSyncingNextcloud] = useState(false);
   const [selectedChunk, setSelectedChunk] = useState(null);
+  const [nextcloudModalOpen, setNextcloudModalOpen] = useState(false);
+  const [nextcloudStatus, setNextcloudStatus] = useState({ connected: false });
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = 'info') => {
@@ -28,14 +31,16 @@ export default function App() {
 
   const loadData = async () => {
     try {
-      const [hRes, dRes, sRes] = await Promise.all([
+      const [hRes, dRes, sRes, ncRes] = await Promise.all([
         fetch(`${API_BASE}/api/health`).then(r => r.json()).catch(() => null),
         fetch(`${API_BASE}/api/documents`).then(r => r.json()).catch(() => ({ documents: [] })),
-        fetch(`${API_BASE}/api/stats`).then(r => r.json()).catch(() => null)
+        fetch(`${API_BASE}/api/stats`).then(r => r.json()).catch(() => null),
+        fetch(`${API_BASE}/api/nextcloud/status`).then(r => r.json()).catch(() => ({ connected: false }))
       ]);
       if (hRes) setHealth(hRes);
       if (dRes?.documents) setDocuments(dRes.documents);
       if (sRes) setStats(sRes);
+      if (ncRes) setNextcloudStatus(ncRes);
     } catch (err) {
       console.error("Failed to load initial data", err);
     }
@@ -60,7 +65,11 @@ export default function App() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Upload failed');
       
-      showToast(`Artifact "${file.name}" indexed: ${data.chunks_indexed} vectors committed.`, 'success');
+      if (data.nextcloud?.success) {
+        showToast(`"${file.name}" saved to Nextcloud (/DocuMind) & ${data.chunks_indexed} vectors committed to RAG!`, 'success');
+      } else {
+        showToast(`Artifact "${file.name}" indexed: ${data.chunks_indexed} vectors committed.`, 'success');
+      }
       await loadData();
     } catch (err) {
       showToast(`Ingestion error: ${err.message}`, 'error');
@@ -130,8 +139,10 @@ export default function App() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Inference query failed');
       setQueryResult(data);
+      return data;
     } catch (err) {
       showToast(`Inference error: ${err.message}`, 'error');
+      throw err;
     } finally {
       setQuerying(false);
     }
@@ -165,6 +176,7 @@ export default function App() {
         stats={stats}
         onSeedSamples={handleSeedSamples}
         onSyncNextcloud={handleSyncNextcloud}
+        onOpenNextcloud={() => setNextcloudModalOpen(true)}
         onOpenArch={() => setActiveTab('infrastructure')}
         seeding={seeding}
         syncingNextcloud={syncingNextcloud}
@@ -181,6 +193,7 @@ export default function App() {
             result={queryResult}
             onInspectChunk={(chunk) => setSelectedChunk(chunk)}
             stats={stats}
+            onUpload={handleUpload}
           />
         )}
 
@@ -191,7 +204,9 @@ export default function App() {
             onDelete={handleDelete}
             uploading={uploading}
             onSyncNextcloud={handleSyncNextcloud}
+            onOpenNextcloud={() => setNextcloudModalOpen(true)}
             syncingNextcloud={syncingNextcloud}
+            nextcloudStatus={nextcloudStatus}
           />
         )}
 
@@ -206,6 +221,17 @@ export default function App() {
           <InfrastructureView />
         )}
       </main>
+
+      {/* Nextcloud Storage Connection Modal */}
+      <NextcloudModal
+        isOpen={nextcloudModalOpen}
+        onClose={() => setNextcloudModalOpen(false)}
+        onSyncSuccess={() => {
+          loadData();
+          showToast('Nextcloud documents synchronized successfully!', 'success');
+        }}
+        API_BASE={API_BASE}
+      />
 
       {/* Chunk Inspector Audit Modal */}
       <ChunkInspectorModal

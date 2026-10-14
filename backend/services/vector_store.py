@@ -40,17 +40,32 @@ class LocalVectorStore:
         except Exception as e:
             print(f"[LocalVectorStore] Error saving index: {e}")
 
-    def add_document(self, doc_id: str, doc_name: str, file_size: int, total_pages: int):
-        self.documents[doc_id] = {
+    def add_document(self, doc_id: str, doc_name: str, file_size: int, total_pages: int, **metadata):
+        entry = {
             "id": doc_id,
             "name": doc_name,
             "size": file_size,
             "pages": total_pages,
             "chunks_count": 0,
             "status": "indexed",
-            "indexed_at": str(np.datetime64('now'))
+            "indexed_at": str(np.datetime64('now')),
+            "storage_location": metadata.get("storage_location", "Local / S3"),
+            "nextcloud_path": metadata.get("nextcloud_path"),
+            "nextcloud_url": metadata.get("nextcloud_url"),
+            "has_nextcloud": metadata.get("has_nextcloud", False),
+            "source": metadata.get("source", "Upload")
         }
+        for k, v in metadata.items():
+            entry[k] = v
+        self.documents[doc_id] = entry
         self.save()
+
+    def update_document(self, doc_id: str, **kwargs) -> bool:
+        if doc_id in self.documents:
+            self.documents[doc_id].update(kwargs)
+            self.save()
+            return True
+        return False
 
     def add_chunks_with_embeddings(self, chunks: List[Dict[str, Any]], embeddings: List[List[float]]):
         for chunk, emb in zip(chunks, embeddings):
@@ -61,22 +76,46 @@ class LocalVectorStore:
                 self.documents[doc_id]["chunks_count"] += 1
         self.save()
 
-    def search(self, query_embedding: List[float], top_k: int = 4, threshold: float = 0.0) -> List[Dict[str, Any]]:
+    def search(
+        self,
+        query_embedding: List[float],
+        top_k: int = 4,
+        threshold: float = 0.0,
+        query_text: str = ""
+    ) -> List[Dict[str, Any]]:
         if not self.vectors:
             return []
 
+        import re
         q_vec = np.array(query_embedding, dtype=np.float32)
         matrix = np.array(self.vectors, dtype=np.float32)
 
         # Dot product for normalized vectors = cosine similarity
         similarities = np.dot(matrix, q_vec)
 
+        # Extract meaningful query keywords for hybrid BM25-style boosting
+        q_words = [w.lower() for w in re.findall(r'\b[a-zA-Z0-9_-]{2,}\b', query_text)] if query_text else []
+        stop_words = {"who", "what", "where", "when", "why", "how", "is", "are", "was", "were", "the", "and", "for", "with", "about", "tell", "me"}
+        keywords = [w for w in q_words if w not in stop_words]
+
         # Pair with chunk data
         results = []
         for idx, score in enumerate(similarities):
             val = float(score)
+            chunk = self.chunks[idx]
+
+            # Hybrid keyword boost: if query terms match words in chunk text or document name
+            if keywords:
+                text_lower = chunk.get("text", "").lower()
+                doc_name_lower = chunk.get("doc_name", "").lower()
+                matches = sum(1 for kw in keywords if kw in text_lower or kw in doc_name_lower)
+                if matches > 0:
+                    keyword_ratio = matches / len(keywords)
+                    # Blend cosine similarity with keyword exact-match confidence
+                    val = (val * 0.45) + (keyword_ratio * 0.55)
+
             if val >= threshold:
-                chunk_copy = dict(self.chunks[idx])
+                chunk_copy = dict(chunk)
                 chunk_copy["score"] = round(val, 4)
                 results.append(chunk_copy)
 

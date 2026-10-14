@@ -20,14 +20,21 @@ class DocumentParser:
         Returns a list of dicts: [{"page": 1, "text": "..."}]
         """
         pages_content = []
-        reader = PdfReader(io.BytesIO(file_bytes))
-        for idx, page in enumerate(reader.pages):
-            text = page.extract_text() or ""
-            # Clean up excessive whitespace
-            text = re.sub(r'[ \t]+', ' ', text)
-            text = re.sub(r'\n{3,}', '\n\n', text).strip()
-            if text:
-                pages_content.append({"page": idx + 1, "text": text})
+        try:
+            reader = PdfReader(io.BytesIO(file_bytes))
+            for idx, page in enumerate(reader.pages):
+                try:
+                    text = page.extract_text() or ""
+                except Exception as e:
+                    print(f"[DocumentParser] Warning extracting text from PDF page {idx+1}: {e}")
+                    text = ""
+                # Clean up excessive whitespace
+                text = re.sub(r'[ \t]+', ' ', text)
+                text = re.sub(r'\n{3,}', '\n\n', text).strip()
+                if text:
+                    pages_content.append({"page": idx + 1, "text": text})
+        except Exception as e:
+            print(f"[DocumentParser] Error reading PDF: {e}")
         return pages_content
 
     @staticmethod
@@ -37,6 +44,8 @@ class DocumentParser:
         Treats every ~3000 chars or double formfeed as a logical page.
         """
         cleaned = re.sub(r'[ \t]+', ' ', text_content).strip()
+        if not cleaned:
+            return [{"page": 1, "text": "Empty document"}]
         # Partition into simulated pages if large
         page_size = 2500
         pages = []
@@ -70,8 +79,8 @@ class DocumentParser:
 
             for sub_text in sub_chunks:
                 clean_chunk_text = sub_text.strip()
-                if len(clean_chunk_text) < 30:
-                    continue  # Ignore tiny noisy fragments
+                if not clean_chunk_text:
+                    continue
 
                 chunk_id = f"{doc_id}_p{page_num}_c{chunk_counter}"
                 chunks.append({
@@ -88,6 +97,25 @@ class DocumentParser:
                     }
                 })
                 chunk_counter += 1
+
+        # Fallback if text was short or split resulted in no chunks
+        if not chunks and pages:
+            combined = " ".join(p.get("text", "").strip() for p in pages).strip()
+            if not combined:
+                combined = f"Document artifact: {doc_name}"
+            chunks.append({
+                "id": f"{doc_id}_p1_c0",
+                "doc_id": doc_id,
+                "doc_name": doc_name,
+                "chunk_index": 0,
+                "page_number": 1,
+                "text": combined,
+                "metadata": {
+                    "source": doc_name,
+                    "page": 1,
+                    "char_count": len(combined)
+                }
+            })
 
         return chunks
 

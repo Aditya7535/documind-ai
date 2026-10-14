@@ -19,6 +19,11 @@ yarn-error.log*
 storage/db/
 storage/nextcloud_data/
 storage/vector_cache.json
+storage/docs/
+storage/nextcloud_drive/
+
+# Multi-container demo / temporary app
+multi-container-app/
 
 # IDE / OS
 .idea/

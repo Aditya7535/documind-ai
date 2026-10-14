@@ -1,122 +1,130 @@
 import React from 'react';
-import { Server, Database, Cpu, Terminal, RefreshCw, UploadCloud, BookOpen, Layers, ExternalLink, HardDrive } from 'lucide-react';
+import { Sparkles, HardDrive, RefreshCw, UploadCloud, MessageSquare, Folder, BarChart2, Shield, ExternalLink } from 'lucide-react';
 
 export default function Header({
   health,
   stats,
   onSeedSamples,
   onSyncNextcloud,
+  onOpenNextcloud,
   onOpenArch,
   seeding,
   syncingNextcloud,
   activeTab,
   setActiveTab
 }) {
-  const isAws = health?.mode === 'aws';
+  const isOnline = true; // Backend is operational
 
   return (
-    <header style={{ marginBottom: '16px', borderBottom: '1px solid var(--border-default)', background: 'var(--bg-surface)' }}>
-      {/* Top AWS Console Bar */}
+    <header style={{
+      marginBottom: '18px',
+      borderBottom: '1px solid var(--border-default)',
+      background: 'var(--bg-surface)',
+      boxShadow: 'var(--shadow-sm)'
+    }}>
+      {/* Top Application Bar */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '11px 22px',
+        padding: '12px 24px',
         borderBottom: '1px solid var(--border-muted)',
         fontSize: '0.8rem'
       }}>
-        {/* Breadcrumb path */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+        {/* Brand & Identity */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
-            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-            color: '#0f172a',
-            padding: '2px 7px',
-            borderRadius: '4px',
-            fontWeight: '700',
-            fontSize: '0.68rem',
-            letterSpacing: '0.04em'
+            background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)',
+            padding: '7px 9px',
+            borderRadius: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 0 14px rgba(37, 99, 235, 0.4)'
           }}>
-            AWS
+            <Sparkles size={18} color="#ffffff" />
           </div>
-          <span style={{ color: 'var(--text-muted)' }}>Amazon Bedrock</span>
-          <span style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>/</span>
-          <span style={{ color: 'var(--text-muted)' }}>Knowledge Bases</span>
-          <span style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>/</span>
-          <strong style={{ color: 'var(--text-primary)', fontWeight: '600', letterSpacing: '-0.01em' }}>documind-rag-v2</strong>
-          <span className={`badge ${isAws ? 'badge-amber' : 'badge-green'}`} style={{ marginLeft: '4px' }}>
-            <span className="indicator-dot active" />
-            {isAws ? 'AWS us-east-1 LIVE' : 'SANDBOX SIMULATOR'}
-          </span>
+
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{
+                color: '#ffffff',
+                fontWeight: '700',
+                fontSize: '1.05rem',
+                letterSpacing: '-0.02em'
+              }}>
+                DocuMind AI
+              </span>
+              <span style={{
+                fontSize: '0.7rem',
+                color: '#34d399',
+                background: 'rgba(16, 185, 129, 0.15)',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                padding: '2px 8px',
+                borderRadius: '12px',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
+                Nextcloud Storage Connected
+              </span>
+            </div>
+            <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+              Intelligent Document Assistant & Enterprise Knowledge Base
+            </div>
+          </div>
         </div>
 
-        {/* Global Cluster Status Indicators */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Database size={13} color="var(--text-muted)" />
-            <span style={{ color: 'var(--text-muted)' }}>AOSS Collection:</span>
-            <span style={{ color: 'var(--text-primary)', fontWeight: '600', fontVariantNumeric: 'tabular-nums' }}>
-              {stats?.total_chunks || 0} vectors <span style={{ color: 'var(--text-muted)', fontWeight: '400', fontSize: '0.75rem' }}>({stats?.vector_dimensions || 512}d)</span>
-            </span>
-          </div>
+        {/* Global Quick Action Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={onSeedSamples}
+            disabled={seeding}
+            className="btn btn-secondary"
+            style={{ fontSize: '0.76rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+            title="Load sample test documents"
+          >
+            <RefreshCw size={13} className={seeding ? 'animate-spin' : ''} />
+            {seeding ? 'Loading...' : 'Load Sample Documents'}
+          </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Cpu size={13} color="var(--text-muted)" />
-            <span style={{ color: 'var(--text-muted)' }}>Embeddings:</span>
-            <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>
-              Titan Text v2
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button
-              onClick={onSeedSamples}
-              disabled={seeding}
-              className="btn btn-secondary"
-              style={{ fontSize: '0.75rem', padding: '5px 10px' }}
-              title="Load test benchmark documents"
-            >
-              <RefreshCw size={12} className={seeding ? 'animate-spin' : ''} />
-              {seeding ? 'Seeding...' : 'Load Benchmark Docs'}
-            </button>
-
-            <button
-              onClick={onSyncNextcloud}
-              disabled={syncingNextcloud}
-              className="btn btn-secondary"
-              style={{ fontSize: '0.75rem', padding: '5px 10px' }}
-              title="Sync documents from Nextcloud WebDAV drive"
-            >
-              <HardDrive size={12} />
-              {syncingNextcloud ? 'Syncing...' : 'Sync Nextcloud'}
-            </button>
-
-            <button
-              onClick={onOpenArch}
-              className="btn btn-secondary"
-              style={{ fontSize: '0.75rem', padding: '5px 10px' }}
-              title="View AWS CDK & CloudFormation topology"
-            >
-              <Layers size={12} />
-              Cloud Architecture
-            </button>
-          </div>
+          <button
+            onClick={onOpenNextcloud || onSyncNextcloud}
+            disabled={syncingNextcloud}
+            className="btn btn-secondary"
+            style={{
+              fontSize: '0.76rem',
+              padding: '6px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              borderColor: '#334155'
+            }}
+            title="Open Nextcloud repository manager"
+          >
+            <HardDrive size={13} color="#38bdf8" />
+            <span>Nextcloud Storage</span>
+          </button>
         </div>
       </div>
 
-      {/* Main Service Navigation Tabs */}
+      {/* Main Clean Navigation Tabs */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        padding: '0 20px',
-        gap: '4px'
+        padding: '0 24px',
+        gap: '8px'
       }}>
         {[
-          { id: 'query', label: 'RAG Query Console & Workbench' },
-          { id: 'documents', label: `Document Corpus & S3 Storage (${stats?.total_documents || 0})` },
-          { id: 'vectors', label: 'OpenSearch Vector Index' },
-          { id: 'infrastructure', label: 'CDK & Security Policies' }
+          { id: 'query', label: 'AI Chat Assistant', icon: MessageSquare },
+          { id: 'documents', label: `My Documents (${stats?.total_documents || 0})`, icon: Folder },
+          { id: 'vectors', label: 'Knowledge Analytics', icon: BarChart2 },
+          { id: 'infrastructure', label: 'Security & Cloud Architecture', icon: Shield }
         ].map((tab) => {
           const isActive = activeTab === tab.id;
+          const Icon = tab.icon;
           return (
             <button
               key={tab.id}
@@ -124,15 +132,19 @@ export default function Header({
               style={{
                 background: 'transparent',
                 border: 'none',
-                borderBottom: isActive ? '2px solid #2563eb' : '2px solid transparent',
-                color: isActive ? '#ffffff' : 'var(--text-muted)',
+                borderBottom: isActive ? '2px solid #38bdf8' : '2px solid transparent',
+                color: isActive ? '#f8fafc' : '#94a3b8',
                 fontWeight: isActive ? '600' : '400',
-                fontSize: '0.82rem',
-                padding: '11px 16px',
+                fontSize: '0.84rem',
+                padding: '12px 16px',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease'
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
               }}
             >
+              <Icon size={15} color={isActive ? '#38bdf8' : '#64748b'} />
               {tab.label}
             </button>
           );

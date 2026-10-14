@@ -8,6 +8,7 @@ export default function DocumentManager({
   uploading,
   uploadProgress,
   onSyncNextcloud,
+  onOpenNextcloud,
   syncingNextcloud
 }) {
   const fileInputRef = useRef(null);
@@ -57,13 +58,13 @@ export default function DocumentManager({
           <h2 style={{ fontSize: '1.05rem', fontWeight: '600' }}>Knowledge Base</h2>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {onSyncNextcloud && (
+          {(onOpenNextcloud || onSyncNextcloud) && (
             <button
-              onClick={onSyncNextcloud}
+              onClick={onOpenNextcloud || onSyncNextcloud}
               disabled={syncingNextcloud}
               className="btn btn-secondary"
               style={{ padding: '4px 10px', fontSize: '0.72rem' }}
-              title="Sync documents from Nextcloud (http://localhost:8080)"
+              title="Connect and manage Nextcloud WebDAV drive"
             >
               <UploadCloud size={13} color="var(--accent-cyan-light)" />
               {syncingNextcloud ? 'Syncing...' : 'Nextcloud'}
